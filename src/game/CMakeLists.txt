@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(game)
+
+set(CMAKE_CXX_STANDARD 20)
+
+file(
+  GLOB_RECURSE
+  PROJECT_SOURCE_FILES
+  ${PROJECT_SOURCE_DIR}/src/*.cpp
+)
+
+add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCE_FILES})
+add_library(${PROJECT_NAMESPACE}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+target_include_directories(
+  ${PROJECT_NAME}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAMESPACE}-${PROJECT_VERSION}>
+)

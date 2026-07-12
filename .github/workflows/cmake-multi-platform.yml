@@ -1,10 +1,10 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+# See: https://github.com
 name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "main" ]
+    # branches: [ "main" ]
     tags:
       - 'v*'
   workflow_dispatch:
@@ -73,20 +73,31 @@ jobs:
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Install and Package
-      # Install built targets to a clean directory and archive them as ZIP on all platforms
+    - name: Package binaries
+      # Package only the built executable(s) into a versioned archive for GitHub Releases
       if: startsWith(github.ref, 'refs/tags/')
       shell: bash
       run: |
-        cmake --install ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-        
-        ARCHIVE_NAME="lesta_autofighter-${{ matrix.os }}-${{ matrix.c_compiler }}"
+        # Determine the binary name and path based on platform
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          powershell -Command "Compress-Archive -Path '${{ steps.strings.outputs.install-dir }}/*' -DestinationPath '${{ github.workspace }}/${ARCHIVE_NAME}.zip'"
+          BINARY_PATH="${{ steps.strings.outputs.build-output-dir }}/${{ matrix.build_type }}/launcher.exe"
         else
-          sudo apt-get update && sudo apt-get install -y zip
-          cd "${{ steps.strings.outputs.install-dir }}"
-          zip -r "${{ github.workspace }}/${ARCHIVE_NAME}.zip" .
+          BINARY_PATH="${{ steps.strings.outputs.build-output-dir }}/launcher"
+        fi
+
+        ARCHIVE_NAME="lesta_autofighter-${{ matrix.os }}-${{ matrix.c_compiler }}"
+
+        # Create a staging directory with only the binary
+        STAGING_DIR="${{ runner.temp }}/$ARCHIVE_NAME"
+        mkdir -p "$STAGING_DIR"
+        cp "$BINARY_PATH" "$STAGING_DIR/"
+
+        # Create the archive from the staging directory
+        cd "${{ runner.temp }}"
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          7z a -tzip "${{ github.workspace }}/$ARCHIVE_NAME.zip" "./$ARCHIVE_NAME/*"
+        else
+          zip -r "${{ github.workspace }}/$ARCHIVE_NAME.zip" "./$ARCHIVE_NAME/"
         fi
 
     - name: Upload to GitHub Release

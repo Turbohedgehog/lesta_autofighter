@@ -17,3 +17,5 @@ target_link_libraries(
   PRIVATE
   autofighter::game
 )
+
+install(TARGETS ${PROJECT_NAME} DESTINATION .)

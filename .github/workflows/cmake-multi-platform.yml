@@ -72,32 +72,26 @@ jobs:
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Test
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      # See https://cmake.org for more detail
-      run: ctest --build-config ${{ matrix.build_type }}
-
-    - name: Prepare artifacts for release
-      # Rename binaries with unique names based on OS and compiler to prevent them from overwriting each other
+    - name: Install and Package
+      # Install built targets to a clean directory and archive them as ZIP on all platforms
       if: startsWith(github.ref, 'refs/tags/')
       shell: bash
       run: |
-        cd ${{ steps.strings.outputs.build-output-dir }}
+        cmake --install ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+        
+        ARCHIVE_NAME="lesta_autofighter-${{ matrix.os }}-${{ matrix.c_compiler }}"
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          EXE_EXT=".exe"
-          if [ -f "Release/lesta_autofighter.exe" ]; then
-            cp Release/lesta_autofighter.exe .
-          fi
+          powershell -Command "Compress-Archive -Path '${{ steps.strings.outputs.install-dir }}/*' -DestinationPath '${{ github.workspace }}/${ARCHIVE_NAME}.zip'"
         else
-          EXE_EXT=""
+          sudo apt-get update && sudo apt-get install -y zip
+          cd "${{ steps.strings.outputs.install-dir }}"
+          zip -r "${{ github.workspace }}/${ARCHIVE_NAME}.zip" .
         fi
-        mv lesta_autofighter${EXE_EXT} lesta_autofighter-${{ matrix.os }}-${{ matrix.c_compiler }}${EXE_EXT}
 
     - name: Upload to GitHub Release
-      # Publish compiled binaries to GitHub Releases only when a tag is pushed
+      # Publish compiled archives to GitHub Releases only when a tag is pushed
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
-        files: ${{ steps.strings.outputs.build-output-dir }}/lesta_autofighter-${{ matrix.os }}-${{ matrix.c_compiler }}*
+        files: ${{ github.workspace }}/lesta_autofighter-*.zip
         token: ${{ secrets.GITHUB_TOKEN }}

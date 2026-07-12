@@ -1,6 +1,7 @@
 #include "console_user_interface.h"
 
 #include <iostream>
+#include <limits>
 
 namespace game::user_interface {
 
@@ -40,7 +41,7 @@ void ConsoleUserInterface::Exclaim(std::string_view sentence, bool wait_enter_ke
 
   if (wait_enter_key) {
     std::cout << "Press Enter to continue..." << std::endl;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); 
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::cin.get();
   }
 }

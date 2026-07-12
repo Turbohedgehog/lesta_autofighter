@@ -9,9 +9,11 @@
 
 namespace game {
 
+static constexpr size_t kBufferSize = 8 * 1024;
+
 Core::Core(std::optional<int> random_seed)
-  : buffer_(Core::kBufferSize)
-  , arena_(buffer_.data(), buffer_.size())
+  : buffer_(kBufferSize)
+  , arena_(buffer_.data(), buffer_.size(), std::pmr::null_memory_resource())
   , pool_(&arena_) {
   if (random_seed.has_value()) {
     random_engine_ = std::mt19937(random_seed.value());

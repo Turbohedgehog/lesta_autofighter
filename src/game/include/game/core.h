@@ -15,8 +15,6 @@ namespace game {
 
 class Core {
  public:
-  static constexpr size_t kBufferSize = 128 * 1024;
-
   Core(std::optional<int> random_seed = std::nullopt);
 
   int Run();

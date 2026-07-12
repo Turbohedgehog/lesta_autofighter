@@ -42,28 +42,8 @@ void Fight::Run(Core& core) {
         defender_stat_str
       )
     );
+
     auto damage = attacker->AttackTo(defender, core);
-
-    // user_interface.Exclaim(
-    //   std::format(
-    //     "{:><50}\n"
-    //     "{}\n"
-    //     "{} attacks {} with damage {}\n\n"
-    //     "{}\n"
-    //     "{} defends with protection {}\n"
-    //     "{:<<50}\n",
-    //     "",
-    //     attacker_stat_str,
-    //     attacker->GetConfig().name,
-    //     defender->GetConfig().name,
-    //     (damage.weapon_damage + damage.ability_damage),
-    //     defender_stat_str,
-    //     defender->GetConfig().name,
-    //     damage.ability_defense,
-    //     ""
-    //   )
-    // );
-
     if (fight.defender.lock()->IsDead()) {
       break;
     }

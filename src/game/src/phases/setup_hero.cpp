@@ -54,7 +54,8 @@ void SetupHero::Run(Core& core) {
       })
       | std::views::keys;
 
-  std::vector<std::string_view> hero_types(allowed_factories.begin(), allowed_factories.end());
+  auto allocator = core.GetAllocator();
+  std::pmr::vector<std::string_view> hero_types(allowed_factories.begin(), allowed_factories.end(), allocator);
 
   auto answer = user_interface.get().Ask(
     "Select hero type",

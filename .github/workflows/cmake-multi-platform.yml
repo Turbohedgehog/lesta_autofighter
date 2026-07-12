@@ -5,8 +5,8 @@ name: CMake on multiple platforms
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -44,6 +44,10 @@ jobs:
           - os: ubuntu-latest
             c_compiler: cl
 
+    # Grant write permissions to allow creation of GitHub Releases and asset uploads
+    permissions:
+      contents: write
+
     steps:
     - uses: actions/checkout@v4
 
@@ -56,7 +60,7 @@ jobs:
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      # See https://cmake.org
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -71,5 +75,29 @@ jobs:
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      # See https://cmake.org for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+    - name: Prepare artifacts for release
+      # Rename binaries with unique names based on OS and compiler to prevent them from overwriting each other
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      run: |
+        cd ${{ steps.strings.outputs.build-output-dir }}
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          EXE_EXT=".exe"
+          if [ -f "Release/lesta_autofighter.exe" ]; then
+            cp Release/lesta_autofighter.exe .
+          fi
+        else
+          EXE_EXT=""
+        fi
+        mv lesta_autofighter${EXE_EXT} lesta_autofighter-${{ matrix.os }}-${{ matrix.c_compiler }}${EXE_EXT}
+
+    - name: Upload to GitHub Release
+      # Publish compiled binaries to GitHub Releases only when a tag is pushed
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ${{ steps.strings.outputs.build-output-dir }}/lesta_autofighter-${{ matrix.os }}-${{ matrix.c_compiler }}*
+        token: ${{ secrets.GITHUB_TOKEN }}
